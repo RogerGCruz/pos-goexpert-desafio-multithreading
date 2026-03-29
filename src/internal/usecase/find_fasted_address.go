@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pos-goexpert-desafio2/pos-goexpert-desafio-multithreading/src/internal/domain"
-	"github.com/pos-goexpert-desafio2/pos-goexpert-desafio-multithreading/src/internal/ports"
+	"github.com/rogergcruz/pos-goexpert-desafio-multithreading/src/internal/domain"
+	"github.com/rogergcruz/pos-goexpert-desafio-multithreading/src/internal/ports"
 )
 
 var ErrTimeout = errors.New("timeout for all providers in the given time one second")

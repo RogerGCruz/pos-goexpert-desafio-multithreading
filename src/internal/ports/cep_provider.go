@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/pos-goexpert-desafio2/pos-goexpert-desafio-multithreading/src/internal/domain"
+	"github.com/rogergcruz/pos-goexpert-desafio-multithreading/src/internal/domain"
 )
 
 type CEPProvider interface {
