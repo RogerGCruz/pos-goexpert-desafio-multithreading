@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/rogergcruz/pos-goexpert-desafio-multithreading/src/internal/domain"
 )
@@ -30,7 +32,12 @@ type response struct {
 	Error        bool   `json:"erro"`
 }
 
-func (c *Client) Lookup(ctx context.Context, cep string) (domain.Address, error) {
+func (c *Client) Lookup(ctx context.Context, cep string) (addr domain.Address, err error) {
+	startedAt := time.Now()
+	defer func() {
+		log.Printf("[api=%s] cep=%s duration=%s err=%v", c.Name(), cep, time.Since(startedAt), err)
+	}()
+
 	url := fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
