@@ -32,6 +32,8 @@ type response struct {
 	Error        bool   `json:"error"`
 }
 
+// REQUISITO 1: Método que participa das requisições simultâneas
+// Será chamado em uma goroutine separada no usecase
 func (c *Client) Lookup(ctx context.Context, cep string) (addr domain.Address, err error) {
 	startedAt := time.Now()
 	defer func() {
@@ -51,6 +53,7 @@ func (c *Client) Lookup(ctx context.Context, cep string) (addr domain.Address, e
 	}
 	defer resp.Body.Close()
 
+	// REQUISITO 4: Utilizando context com timeout para respeitar o limite de 1 segundo
 	if resp.StatusCode != http.StatusOK {
 		return domain.Address{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -64,6 +67,7 @@ func (c *Client) Lookup(ctx context.Context, cep string) (addr domain.Address, e
 		return domain.Address{}, fmt.Errorf("CEP not found")
 	}
 
+	// REQUISITO 3: Retornando os dados do endereço e o nome da API para identificar qual foi a mais rápida
 	return domain.Address{
 		CEP:          payload.CEP,
 		State:        payload.State,

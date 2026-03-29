@@ -27,10 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// REQUISITO 4: Cliente HTTP com timeout de 1 segundo
 	httpClient := &http.Client{
 		Timeout: 1 * time.Second,
 	}
 
+	// REQUISITO 1: Instanciando dois providers (BrasilAPI e ViaCEP) que farão requisições simultâneas
 	providers := []ports.CEPProvider{
 		brasilapi.NewClient(httpClient),
 		viacep.NewClient(httpClient),
@@ -44,6 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// REQUISITO 3: Output: Qual API entregou a resposta: BrasilAPI ou ViaCEP
 	output := struct {
 		API     string      `json:"api"`
 		Address interface{} `json:"address"`
@@ -52,6 +55,7 @@ func main() {
 		Address: address,
 	}
 
+	// REQUISITO 3: Exibindo o resultado no terminal (stdout) em formato JSON
 	data, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
 		fmt.Printf("error generating output: %v\n", err)
