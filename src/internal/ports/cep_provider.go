@@ -8,5 +8,5 @@ import (
 
 type CEPProvider interface {
 	Name() string
-	Lookup(ctx context.Context, cep string) (*domain.Address, error)
+	Lookup(ctx context.Context, cep string) (domain.Address, error)
 }
