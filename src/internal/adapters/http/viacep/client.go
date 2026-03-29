@@ -27,6 +27,7 @@ type response struct {
 	City         string `json:"localidade"`
 	Street       string `json:"logradouro"`
 	Neighborhood string `json:"bairro"`
+	Error        bool   `json:"erro"`
 }
 
 func (c *Client) Lookup(ctx context.Context, cep string) (domain.Address, error) {
@@ -50,6 +51,10 @@ func (c *Client) Lookup(ctx context.Context, cep string) (domain.Address, error)
 	var payload response
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return domain.Address{}, err
+	}
+
+	if payload.Error {
+		return domain.Address{}, fmt.Errorf("cep nao encontrado")
 	}
 
 	return domain.Address{
