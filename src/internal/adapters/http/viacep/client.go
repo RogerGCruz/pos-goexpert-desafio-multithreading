@@ -54,7 +54,7 @@ func (c *Client) Lookup(ctx context.Context, cep string) (domain.Address, error)
 	}
 
 	if payload.Error {
-		return domain.Address{}, fmt.Errorf("cep nao encontrado")
+		return domain.Address{}, fmt.Errorf("CEP not found")
 	}
 
 	return domain.Address{
