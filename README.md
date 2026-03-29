@@ -20,13 +20,10 @@ Aplicação em Go que consulta BrasilAPI e ViaCEP em paralelo e retorna apenas a
 
 ## Como executar
 
-1. Inicialize o módulo (se ainda não existir):
-   go mod init pos-goexpert-desafio-multithreading
-
-2. Baixe dependências:
+1. Baixe as dependências:
    go mod tidy
 
-3. Execute:
+2. Execute:
    go run ./src/cmd/api 40279680
 
 ## Exemplo de saída
@@ -41,6 +38,10 @@ Aplicação em Go que consulta BrasilAPI e ViaCEP em paralelo e retorna apenas a
     "state": "BA"
   }
 }
+
+## Exemplo de erro de timeout
+
+Se nenhuma API responder em até 1 segundo, a aplicação retorna erro de timeout.
 
 ## Observações
 
