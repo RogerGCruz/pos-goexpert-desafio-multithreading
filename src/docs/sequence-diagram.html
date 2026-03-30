@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CEP Multithreading — Diagrama de Sequência</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    .mermaid {
+      background: #fff;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      max-width: 1100px;
+      width: 100%;
+    }
+    .legend {
+      margin-top: 2rem;
+      max-width: 1100px;
+      width: 100%;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.2rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .legend h2 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .legend ul { margin: 0; padding-left: 1.2rem; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <h1>Diagrama de Sequência — CEP Multithreading</h1>
+
+  <div class="mermaid">
+sequenceDiagram
+    actor User as Usuário (CLI)
+    participant Main as main.go
+    participant UC as FindFastestAddressUseCase
+    participant CTX as context.WithTimeout (1s)
+    participant CH as channel (buffered)
+    participant G1 as goroutine BrasilAPI
+    participant G2 as goroutine ViaCEP
+    participant BA as BrasilAPI (externa)
+    participant VC as ViaCEP (externa)
+
+    User->>Main: go run ./src/cmd/api {CEP}
+    Main->>Main: isValidCEP(cep)
+    alt CEP inválido
+        Main-->>User: "Invalid CEP" + os.Exit(1)
+    end
+    Main->>Main: http.Client{Timeout: 1s}
+    Main->>Main: []ports.CEPProvider{BrasilAPI, ViaCEP}
+    Main->>UC: NewFindFastestAddress(providers, 1s)
+    Main->>UC: Execute(ctx, cep)
+
+    UC->>CTX: context.WithTimeout(ctx, 1s)
+    Note over CTX: Requisito 4 — Timeout de 1s
+
+    UC->>CH: make(chan result, 2)
+    Note over UC,G2: Requisito 1 — Requisições Simultâneas (goroutines)
+    UC->>G1: go func() → BrasilAPI.Lookup(ctx, cep)
+    UC->>G2: go func() → ViaCEP.Lookup(ctx, cep)
+
+    par BrasilAPI em paralelo
+        G1->>BA: GET /api/cep/v1/{cep}
+        Note over G1: log: [api=BrasilAPI] duration=...
+        BA-->>G1: 200 OK / erro
+        G1->>CH: ch ← result{address, "BrasilAPI", err}
+    and ViaCEP em paralelo
+        G2->>VC: GET /ws/{cep}/json/
+        Note over G2: log: [api=ViaCEP] duration=...
+        VC-->>G2: 200 OK / erro
+        G2->>CH: ch ← result{address, "ViaCEP", err}
+    end
+
+    Note over UC: Requisito 2 — Race Condition (select)
+    alt Primeira resposta bem-sucedida chega no canal
+        UC->>UC: select → case res := ch (err == nil)
+        UC-->>Main: address, source, nil
+    else Ambas chegam com erro
+        UC-->>Main: {}, "", errors.Join(errs...)
+    else ctx.Done() antes de qualquer resposta
+        UC-->>Main: {}, "", ErrTimeout
+    end
+
+    Note over Main: Requisito 3 — Output no terminal
+    alt err != nil (falha ou timeout)
+        Main-->>User: "error: ..." + os.Exit(1)
+    else sucesso
+        Main->>Main: json.MarshalIndent({api, address})
+        Main-->>User: JSON com API vencedora + endereço completo
+    end
+  </div>
+
+  <div class="legend">
+    <h2>Legenda dos Requisitos</h2>
+    <ul>
+      <li><strong>Requisito 1 — Requisições Simultâneas:</strong> duas goroutines lançadas ao mesmo tempo para BrasilAPI e ViaCEP</li>
+      <li><strong>Requisito 2 — Race Condition:</strong> <code>select</code> retorna a primeira resposta bem-sucedida e descarta a outra</li>
+      <li><strong>Requisito 3 — Output:</strong> JSON no terminal com o nome da API vencedora e o endereço completo</li>
+      <li><strong>Requisito 4 — Timeout:</strong> <code>context.WithTimeout</code> de 1 segundo; se disparado, retorna <code>ErrTimeout</code></li>
+    </ul>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
+</body>
+</html>
